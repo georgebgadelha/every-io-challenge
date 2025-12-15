@@ -83,3 +83,102 @@ Please submit your completed challenge via GitHub:
    - @danfsd
 
 Please include clear setup and running instructions in your README.
+
+
+# Implementation
+
+## Stack
+
+- **Framework**: Express.js with TypeScript (strict mode)
+- **Database**: PostgreSQL 15 with Prisma v5
+- **Validation**: Zod schemas for runtime type safety
+- **Testing**: Jest
+- **Containerization**: Docker + docker-compose
+- **Logging**: Structured logging (info, warn, error, debug levels)
+
+## Architecture
+
+**Layered Pattern (Separation of Concerns)**:
+1. **Controller** - HTTP request/response handling + Zod validation
+2. **Service** - Business logic + authorization checks
+3. **Repository** - Data access abstraction
+4. **Database** - Prisma schema + migrations
+5. **Middleware** - Auth (X-User-Id header) + logging
+
+## Quick Start
+
+### Prerequisites
+- Docker & Docker Compose
+- Node.js 22+ (for local development)
+
+### Setup & Run
+
+```bash
+# Clone and setup
+git clone <this_repo_url>
+cd engineering-interivew-be
+cp .env-example .env # I left env-example with sensitive data for testing purposes
+
+# Option 1: Docker (recommended)
+npm run docker:up
+
+# Option 2: Local development
+npm install
+npm run db:migrate
+npm start
+```
+
+API runs on `http://localhost:3000`
+
+## API Endpoints
+
+```bash
+# List tasks
+GET /api/v1/tasks
+Header: X-User-Id: user-1
+
+# Create task
+POST /api/v1/tasks
+Header: X-User-Id: user-1
+Body: { title, description, status? } # Status is optional because if it's not provided we'll set as TODO
+
+# Get task
+GET /api/v1/tasks/:id
+Header: X-User-Id: user-1
+
+# Update task (PATCH - partial)
+PATCH /api/v1/tasks/:id
+Header: X-User-Id: user-1
+Body: { title?, description?, status? }
+
+# Delete task (soft delete)
+DELETE /api/v1/tasks/:id
+Header: X-User-Id: user-1
+```
+
+## Testing
+
+```bash
+npm test                          # Run all tests
+```
+
+## TODOs
+
+- Pagination for task listings, currently returning all tasks which is unbearable for production. The only reason it wasn't implemented was the time constraint.
+- Filters for tasks listings as well, such as status and sort
+- Restore functionality, i.e. a recovery for an archived task
+- Bulk operations, the user should be able to move/delete multiple tasks
+- Rate limiting specially for write operations
+- Request ID for tracing
+- Idempotency key to avoid duplications
+- Add more tests to fulfill coverage, and also add integration tests.
+- Use caching (e.g. Redis) for frequent accessed tasks or even token revocation.
+
+## Tradeoffs
+
+- No JWT auth, it was requested auth without JSON Web Token so we added simple X-User-Id for MVP and mocked users as a constant
+- No Users table, made things easier to implement since it's an MVP
+- No Bulk operations or separated endpoints (one for archiving and another for changing status in general).
+- deletedAt vs ARCHIVED status. This was a concept for future versions of this MVP, we could have a cron to delete +30D archived tasks if wanted.
+- Minimal test coverage, it doesn't coverage everything but it guarantees the happy path and a few error scenarios are covered.
+- Used Prisma + PostgreSQL so MVP could prove task's app usage on a production-level scenario, the time allowed to do it but if we decided to use a User table, for example, it would be indirectly better to also create user endpoints, making the implementation time longer than pre-arrenged.

@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // This needs to be set here because we're using Prisma V5, if it was V7+ we would put on prisma.config.ts
+  url      = env("DATABASE_URL")
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  userId      String    // Reference to mock user, in production this would be a relation to a User model
+  title       String    @db.VarChar(255)
+  description String    @db.VarChar(2000)
+  status      String    @default("TODO") // TODO, IN_PROGRESS, DONE, ARCHIVED
+  deletedAt   DateTime? // Deleted = Archived
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([deletedAt])
+  @@map("tasks")
+}
